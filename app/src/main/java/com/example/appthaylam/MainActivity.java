@@ -54,6 +54,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -93,9 +94,6 @@ public class MainActivity extends AppCompatActivity {
 
     private SpeechRecognizer speechRecognizer;
 
-    private boolean isRecording = false;
-    private String recognizedText = "";
-
     // Bluetooth
     private BluetoothAdapter bluetoothAdapter;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 100;
@@ -118,8 +116,6 @@ public class MainActivity extends AppCompatActivity {
     // API
     private static final String BASE_URL = "https://api.checkphatnguoi.vn/";
 
-    // Launcher yêu cầu quyền CAMERA
-    private ActivityResultLauncher<String> permissionLauncher;
     // ================================================================
 
     private static final int REQUEST_BLE_PERMISSIONS = 2;
@@ -155,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isListening = false;
 
     private ImageButton iconAutoCheckPhatNguoi;
-    private String textSpeakWhenReceivePhatNguoi = "Có lỗi phạt nguội, bạn có muốn gửi thông tin phạt nguội không";
+    private final String textSpeakWhenReceivePhatNguoi = "Có lỗi phạt nguội, bạn có muốn gửi thông tin phạt nguội không";
 
     private int numberOfPenalty = 0;
     private String licensePlatePenalty = "";
@@ -163,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isWaitingRespose = false;
 
     private boolean askingToSendPenalty = false;
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,19 +181,18 @@ public class MainActivity extends AppCompatActivity {
 
 
         btnRecord.setOnClickListener(view -> {
-            if (isListening == true) {
+            if (isListening) {
                 // Nếu đang ghi âm, dừng ghi âm và xử lý âm thanh
                 speechRecognizer.stopListening();
                 isListening = false;
                 //sendRecord();
                 btnRecord.setText("Bấm để ghi âm");
-                if(isWaitingRespose == true)
+                if(isWaitingRespose)
                 {
                     isWaitingRespose = false;
                     speechRecognizer.stopListening();
                     isProcessingPlate = false;
                     askingToSendPenalty = false;
-
                 }
                 else
                 {
@@ -241,7 +237,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Khởi tạo CAMERA (CameraX) và yêu cầu quyền CAMERA
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        permissionLauncher = registerForActivityResult(
+        // Launcher yêu cầu quyền CAMERA
+        ActivityResultLauncher<String> permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestPermission(),
                 isGranted -> {
                     if (isGranted) {
@@ -293,6 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
                 isProcessingPlate = true;
             }
+            @SuppressLint("SetTextI18n")
             @Override
             public void onDone(String utteranceId) {
 
@@ -305,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
                     isWaitingRespose = true;
 
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        if(isWaitingRespose == true)
+                        if(isWaitingRespose)
                         {
                             isWaitingRespose = false;
 
@@ -319,7 +317,6 @@ public class MainActivity extends AppCompatActivity {
 
                             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                                 checkAndSendRecord(textRecord);
-
                             }, 2000);
                         }
 
@@ -405,7 +402,6 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(() -> tvResult.setText(""));
                         speechRecognizer.cancel();
                         isListening = false;
-                        return;
                     } else if (error == SpeechRecognizer.ERROR_CLIENT) {
                         errorMessage = "Client side error. Vui lòng thử lại.";
                         Log.e(TAG, errorMessage);
@@ -414,13 +410,11 @@ public class MainActivity extends AppCompatActivity {
                         speechRecognizer.cancel();
                         isListening = false;
                         initializeSpeechRecognizer();
-                        return;
                     } else if (error == SpeechRecognizer.ERROR_NO_MATCH) {
                         errorMessage = "Không nhận được giọng nói";
                         runOnUiThread(() -> Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show());
                         runOnUiThread(() -> tvResult.setText(""));
                         isListening = false;
-                        return;
                     } else {
                         switch (error) {
                             case SpeechRecognizer.ERROR_AUDIO:
@@ -509,7 +503,6 @@ public class MainActivity extends AppCompatActivity {
         bluetoothAdapter = bluetoothManager.getAdapter();
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "Thiết bị không hỗ trợ Bluetooth LE", Toast.LENGTH_LONG).show();
-            return;
         }
     }
 
@@ -534,23 +527,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void sendRecognizedText() {
-        // Lấy nội dung từ tvResult trước khi kiểm tra
-        recognizedText = tvResult.getText().toString();
-
-        if (recognizedText == null || recognizedText.trim().isEmpty() || tvResult.getText().equals("Kết quả ghi âm")) {
-            Toast.makeText(MainActivity.this, "Chưa có nội dung ghi âm để gửi", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (bluetoothAdapter == null) {
-            Toast.makeText(MainActivity.this, "Thiết bị không hỗ trợ Bluetooth", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        sendTextViaBluetooth(recognizedText);
-    }
+//    private void sendRecognizedText() {
+//        // Lấy nội dung từ tvResult trước khi kiểm tra
+//        String recognizedText = tvResult.getText().toString();
+//
+//        if (recognizedText == null || recognizedText.trim().isEmpty() || tvResult.getText().equals("Kết quả ghi âm")) {
+//            Toast.makeText(MainActivity.this, "Chưa có nội dung ghi âm để gửi", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        if (bluetoothAdapter == null) {
+//            Toast.makeText(MainActivity.this, "Thiết bị không hỗ trợ Bluetooth", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        sendTextViaBluetooth(recognizedText);
+//    }
 
 
     /** Hàm bắt đầu quét BLE */
+    @SuppressLint("SetTextI18n")
     private void startBleScan() {
         foundDevices.clear();
         bleScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -576,7 +570,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** Callback khi quét BLE */
-    private ScanCallback leScanCallback = new ScanCallback() {
+    private final ScanCallback leScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
@@ -596,6 +590,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+        @SuppressLint("SetTextI18n")
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
@@ -605,6 +600,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     /** Hiển thị hộp thoại cho người dùng chọn thiết bị */
+    @SuppressLint("SetTextI18n")
     private void showDeviceSelectionDialog() {
         btnSelectDevice.setText("Quét thiết bị");
         if (foundDevices.isEmpty()) {
@@ -660,6 +656,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** Callback GATT xử lý các sự kiện kết nối và dữ liệu */
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+        @SuppressLint("SetTextI18n")
         @Override
         public void onConnectionStateChange(@NonNull BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -674,7 +671,7 @@ public class MainActivity extends AppCompatActivity {
                     // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
-                btnSelectDevice.setText("Thiết bị:" + bluetoothDeviceBLE.getName().toString());
+                btnSelectDevice.setText("Thiết bị:" + bluetoothDeviceBLE.getName());
                 // Đợi 500ms trước khi gọi discoverServices() để BLE stack ổn định
                 handler.postDelayed(() -> {
                     if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -742,6 +739,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     /** Kiểm tra các permission cần thiết cho BLE */
+    @SuppressLint("ObsoleteSdkInt")
     private boolean hasBlePermissions() {
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             return checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
@@ -754,6 +752,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** Yêu cầu các permission cần thiết cho BLE */
+    @SuppressLint("ObsoleteSdkInt")
     private void requestBlePermissions() {
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             requestPermissions(
@@ -848,7 +847,7 @@ public class MainActivity extends AppCompatActivity {
                                     String plate = extractLicensePlate(cleanedText);
                                     if (plate != null && !plate.equals(edtBienSoXe.getText().toString().trim())) {
                                         runOnUiThread(() -> {
-                                            if(askingToSendPenalty == false)
+                                            if(!askingToSendPenalty)
                                             {
                                                 edtBienSoXe.setText(plate);
                                                 isProcessingPlate = true;
@@ -969,7 +968,7 @@ public class MainActivity extends AppCompatActivity {
                     if (plate != null) {
                         callback.onPlateFound(plate);
                     } else {
-                        if (rotatedBitmap != null && !rotatedBitmap.isRecycled()) {
+                        if (!rotatedBitmap.isRecycled()) {
                             rotatedBitmap.recycle();
                         }
                         attemptOCRWithRotation(originalBitmap, angles, index + 1, callback);
@@ -977,7 +976,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e("MLKit", "Text recognition error (rotation " + angles[index] + "°)", e);
-                    if (rotatedBitmap != null && !rotatedBitmap.isRecycled()) {
+                    if (!rotatedBitmap.isRecycled()) {
                         rotatedBitmap.recycle();
                     }
                     attemptOCRWithRotation(originalBitmap, angles, index + 1, callback);
@@ -1027,12 +1026,9 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-
     private void resumeCamera() {
         previewView.setForeground(null);
     }
-
-
 
     private void callTrafficFineAPI(String licensePlate) {
         startLoadingAnimation();
@@ -1050,8 +1046,9 @@ public class MainActivity extends AppCompatActivity {
         TrafficFineApi api = retrofit.create(TrafficFineApi.class);
         PlateRequest request = new PlateRequest(licensePlate);
         api.getViolations(request).enqueue(new Callback<ApiResponse>() {
+            @SuppressLint("SetTextI18n")
             @Override
-            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+            public void onResponse(@NonNull Call<ApiResponse> call, @NonNull Response<ApiResponse> response) {
                 stopLoadingAnimation();
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse apiResponse = response.body();
@@ -1072,7 +1069,7 @@ public class MainActivity extends AppCompatActivity {
                                     .append("\nĐã xử phạt: ").append(dataInfo.getDaxuphat())
                                     .append("\nLatest: ").append(dataInfo.getLatest());
                             numberOfPenalty = dataInfo.getChuaxuphat();
-                            licensePlatePenalty = violations.isEmpty() ? null : violations.get(0).getBienKiemSoat();
+                            licensePlatePenalty = Objects.requireNonNull(violations).isEmpty() ? null : violations.get(0).getBienKiemSoat();
 
                             if (speakerEnabled && numberOfPenalty > 0) {
                                 askingToSendPenalty = true;
@@ -1085,6 +1082,7 @@ public class MainActivity extends AppCompatActivity {
                                         Log.d("TTS", "Bắt đầu nói: " + utteranceId);
                                         isProcessingPlate = true;
                                     }
+                                    @SuppressLint("SetTextI18n")
                                     @Override
                                     public void onDone(String utteranceId) {
 
@@ -1097,7 +1095,7 @@ public class MainActivity extends AppCompatActivity {
                                             isWaitingRespose = true;
 
                                             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                                if(isWaitingRespose == true)
+                                                if(isWaitingRespose)
                                                 {
                                                     isWaitingRespose = false;
                                                     if (speechRecognizer != null) {
@@ -1146,7 +1144,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
             @Override
-            public void onFailure(Call<ApiResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
                 stopLoadingAnimation();
                 Toast.makeText(MainActivity.this, "Lỗi kết nối API: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 runOnUiThread(() -> {
@@ -1173,9 +1171,9 @@ public class MainActivity extends AppCompatActivity {
         };
         for (String keyword : affirmativeKeywords) {
             if (text.contains(keyword)) {
-                String textSend = licensePlatePenalty + " có " + String.valueOf(numberOfPenalty) + " lỗi phạt nguội chưa xử lý. ";
+                String textSend = licensePlatePenalty + " có " + numberOfPenalty + " lỗi phạt nguội chưa xử lý. ";
                 sendTextViaBluetooth(txtKetQuaPhatNguoi.getText().toString());
-                Toast.makeText(MainActivity.this, "xác nhận gửi: " + text , Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "xác nhận gửi: " + textSend , Toast.LENGTH_SHORT).show();
                 break; // Dừng vòng lặp khi đã nhận diện được
             }
         }
@@ -1190,7 +1188,7 @@ public class MainActivity extends AppCompatActivity {
         Call<ApiResponse> getViolations(@Body PlateRequest request);
     }
 
-    public class PlateRequest {
+    public static class PlateRequest {
         private String bienso;
         public PlateRequest(String bienso) { this.bienso = bienso; }
         public String getBienso() { return bienso; }
@@ -1207,9 +1205,25 @@ public class MainActivity extends AppCompatActivity {
         public String getMsg() { return msg; }
         public List<Violation> getData() { return data; }
         public DataInfo getDataInfo() { return dataInfo; }
+
+        public void setStatus(int status) {
+            this.status = status;
+        }
+
+        public void setMsg(String msg) {
+            this.msg = msg;
+        }
+
+        public void setData(List<Violation> data) {
+            this.data = data;
+        }
+
+        public void setDataInfo(DataInfo dataInfo) {
+            this.dataInfo = dataInfo;
+        }
     }
 
-    public class DataInfo {
+    public static class DataInfo {
         private int total;
         private int chuaxuphat;
         private int daxuphat;
@@ -1220,7 +1234,7 @@ public class MainActivity extends AppCompatActivity {
         public String getLatest() { return latest; }
     }
 
-    public class Violation {
+    public static class Violation {
         @SerializedName("Biển kiểm soát")
         private String bienKiemSoat;
         @SerializedName("Màu biển")
@@ -1248,6 +1262,7 @@ public class MainActivity extends AppCompatActivity {
         public String getTrangThai() { return trangThai; }
         public String getDonViPhatHien() { return donViPhatHien; }
         public List<String> getNoiGiaiQuyet() { return noiGiaiQuyet; }
+        @NonNull
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -1283,11 +1298,12 @@ public class MainActivity extends AppCompatActivity {
     private void startLoadingAnimation() {
         dotCount = 0;
         loadingRunnable = new Runnable() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void run() {
                 StringBuilder dots = new StringBuilder();
                 for (int i = 0; i < dotCount; i++) { dots.append("."); }
-                txtKetQuaPhatNguoi.setText("Đang tra phạt nguội" + dots.toString());
+                txtKetQuaPhatNguoi.setText("Đang tra phạt nguội" + dots);
                 dotCount++;
                 if (dotCount > 10) { dotCount = 0; }
                 loadingHandler.postDelayed(this, 500);
