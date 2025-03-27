@@ -4,18 +4,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.media.Image;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,7 +20,6 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.util.Size;
-import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -39,11 +32,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -55,13 +46,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import com.google.gson.annotations.SerializedName;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -90,10 +79,6 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -175,6 +160,8 @@ public class MainActivity extends AppCompatActivity {
     private int numberOfPenalty = 0;
     private String licensePlatePenalty = "";
 
+    private boolean isWaitingRespose = false;
+
     private boolean askingToSendPenalty = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -197,12 +184,24 @@ public class MainActivity extends AppCompatActivity {
 
 
         btnRecord.setOnClickListener(view -> {
-            if (isListening) {
+            if (isListening == true) {
                 // Nếu đang ghi âm, dừng ghi âm và xử lý âm thanh
                 speechRecognizer.stopListening();
                 isListening = false;
-                sendRecord();
+                //sendRecord();
                 btnRecord.setText("Bấm để ghi âm");
+                if(isWaitingRespose == true)
+                {
+                    isWaitingRespose = false;
+                    speechRecognizer.stopListening();
+                    isProcessingPlate = false;
+                    askingToSendPenalty = false;
+
+                }
+                else
+                {
+                    sendRecord();
+                }
             } else {
                 startVoiceRecognition();
                 btnRecord.setText("Đang ghi âm");
@@ -303,19 +302,27 @@ public class MainActivity extends AppCompatActivity {
                     // Thực hiện hành động sau khi nói xong, ví dụ: cập nhật giao diện
                     startVoiceRecognition();
                     btnRecord.setText("Đang chờ nhận lệnh:");
+                    isWaitingRespose = true;
 
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        if (speechRecognizer != null) {
-                            speechRecognizer.stopListening();
+                        if(isWaitingRespose == true)
+                        {
+                            isWaitingRespose = false;
+
+                            if (speechRecognizer != null) {
+                                speechRecognizer.stopListening();
+                            }
+
+                            isListening = false;
+                            // Cập nhật lại giao diện sau khi dừng ghi âm
+                            btnRecord.setText("Bấm để ghi âm");
+
+                            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                checkAndSendRecord(textRecord);
+
+                            }, 2000);
                         }
-                        isListening = false;
-                        // Cập nhật lại giao diện sau khi dừng ghi âm
-                        btnRecord.setText("Bấm để ghi âm");
 
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            checkAndSendRecord(textRecord);
-
-                        }, 2000);
                     }, 5000);
 
                 });
@@ -1087,20 +1094,27 @@ public class MainActivity extends AppCompatActivity {
                                             // Thực hiện hành động sau khi nói xong, ví dụ: cập nhật giao diện
                                             startVoiceRecognition();
                                             btnRecord.setText("Đang chờ nhận lệnh:");
+                                            isWaitingRespose = true;
 
                                             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                                if (speechRecognizer != null) {
-                                                    speechRecognizer.stopListening();
-                                                }
-                                                isListening = false;
-                                                // Cập nhật lại giao diện sau khi dừng ghi âm
-                                                btnRecord.setText("Bấm để ghi âm");
+                                                if(isWaitingRespose == true)
+                                                {
+                                                    isWaitingRespose = false;
+                                                    if (speechRecognizer != null) {
+                                                        speechRecognizer.stopListening();
+                                                    }
+                                                    isListening = false;
+                                                    // Cập nhật lại giao diện sau khi dừng ghi âm
+                                                    btnRecord.setText("Bấm để ghi âm");
 
-                                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                                    checkAndRunSendPhatnguoi();
-                                                    isProcessingPlate = false;
-                                                    askingToSendPenalty = false;
-                                                }, 2000);
+                                                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+                                                        checkAndRunSendPhatnguoi();
+                                                        isProcessingPlate = false;
+                                                        askingToSendPenalty = false;
+                                                    }, 2000);
+                                                }
+
                                             }, 5000);
 
                                         });
