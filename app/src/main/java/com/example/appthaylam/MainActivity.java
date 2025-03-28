@@ -1171,7 +1171,7 @@ public class MainActivity extends AppCompatActivity {
         };
         for (String keyword : affirmativeKeywords) {
             if (text.contains(keyword)) {
-                String textSend = licensePlatePenalty + " có " + numberOfPenalty + " lỗi phạt nguội chưa xử lý. ";
+                String textSend = licensePlatePenalty + " CO " + numberOfPenalty + " LOI PHAT NGUOI CHUA XU LY.";
                 sendTextViaBluetooth(txtKetQuaPhatNguoi.getText().toString());
                 Toast.makeText(MainActivity.this, "xác nhận gửi: " + textSend , Toast.LENGTH_SHORT).show();
                 break; // Dừng vòng lặp khi đã nhận diện được
