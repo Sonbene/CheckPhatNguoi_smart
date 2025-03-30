@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#AAE449"
+    android:backgroundTint="#F2F2BE"
+    android:padding="8dp"
+    tools:context=".MainActivity">
+
+    <!-- Icon tra_phat_nguoi ở góc trên bên trái -->
+    <ImageButton
+        android:id="@+id/iconAutoCheckPhatNguoi"
+        android:layout_width="68dp"
+        android:layout_height="85dp"
+        android:src="@drawable/tra_phat_nguoi_icon"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Loa"
+        android:padding="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Guideline dọc chia màn hình thành 2 cột (50%/50%) -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_divide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintGuide_percent="0.5"
+        android:orientation="vertical" />
+
+    <!-- Cột bên trái: chứa Camera, dòng nhập biển số và các Button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/leftColumn"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/guideline_divide"
+        app:layout_constraintTop_toBottomOf="@id/iconAutoCheckPhatNguoi"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- PreviewView: hiển thị camera ở phần trên, duy trì tỷ lệ 16:9 -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="1440dp"
+            android:layout_height="518dp"
+            app:layout_constraintBottom_toTopOf="@+id/buttonColumn"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.842"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.413" />
+
+        <!-- Các Button: neo xuống dưới cùng của cột bên trái -->
+        <LinearLayout
+            android:id="@+id/buttonColumn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+            <Button
+                android:id="@+id/btnRecord"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:minHeight="55dp"
+                android:text="Bấm để ghi âm"
+                android:textSize="26sp" />
+            <Button
+                android:id="@+id/btnSelectDevice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:foreground="?attr/selectableItemBackground"
+                android:minHeight="55dp"
+                android:text="Quét thiết bị"
+                android:textSize="26sp" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Cột bên phải: chứa 2 ScrollView hiển thị kết quả -->
+    <LinearLayout
+        android:id="@+id/rightColumn"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_margin="8dp"
+        app:layout_constraintStart_toEndOf="@id/guideline_divide"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+        <ScrollView
+            android:id="@+id/scrollViewAPI"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#EFE5E5"
+            android:backgroundTint="#99BC6F">
+            <TextView
+                android:id="@+id/txtKetQuaPhatNguoi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Kết quả tra phạt nguội"
+                android:textColor="#FAF80F0F"
+                android:textSize="26sp" />
+        </ScrollView>
+        <ScrollView
+            android:id="@+id/scrollViewResult"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#E2E8ED"
+            android:backgroundTint="#ABD7AD">
+            <TextView
+                android:id="@+id/tvResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:background="#C51616"
+                android:backgroundTint="#005EB15E"
+                android:text="Kết quả ghi âm"
+                android:textColor="#000000"
+                android:textSize="26sp" />
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- EditText dòng nhập biển số (nếu cần hiển thị riêng, ngoài leftColumn) -->
+    <EditText
+        android:id="@+id/edtBienSoXe"
+        android:layout_width="522dp"
+        android:layout_height="73dp"
+        android:layout_margin="8dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:inputType="text"
+        android:text="19A29694"
+        android:textColor="#070101"
+        android:textSize="26sp"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_divide"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/iconAutoCheckPhatNguoi"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

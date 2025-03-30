@@ -20,6 +20,8 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.util.Size;
+import android.view.ScaleGestureDetector; // Added for camera zoom
+import android.view.MotionEvent;          // Added for camera zoom
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -32,6 +34,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;           // Added for camera zoom
+import androidx.camera.core.CameraControl;    // Added for camera zoom
+import androidx.camera.core.CameraInfo;       // Added for camera zoom
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
@@ -112,6 +117,10 @@ public class MainActivity extends AppCompatActivity {
     // CameraX
     private ImageCapture imageCapture;
     private ProcessCameraProvider cameraProvider;
+    private Camera camera;  // Added for camera zoom
+
+    // ScaleGestureDetector cho zoom bằng tay
+    private ScaleGestureDetector scaleGestureDetector; // Added for camera zoom
 
     // API
     private static final String BASE_URL = "https://api.checkphatnguoi.vn/";
@@ -176,9 +185,30 @@ public class MainActivity extends AppCompatActivity {
         edtBienSoXe = findViewById(R.id.edtBienSoXe);
         txtKetQuaPhatNguoi = findViewById(R.id.txtKetQuaPhatNguoi);
         iconAutoCheckPhatNguoi = findViewById(R.id.iconAutoCheckPhatNguoi);
-        // Khởi tạo GHI ÂM
+        // Khởi tạo GHI Âm
         requestAudioPermission();
 
+        // --- Initialize ScaleGestureDetector for pinch zoom --- // Added for camera zoom
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                if (camera != null) {
+                    float currentZoomRatio = camera.getCameraInfo().getZoomState().getValue().getZoomRatio();
+                    float delta = detector.getScaleFactor();
+                    float newZoomRatio = currentZoomRatio * delta;
+                    // Có thể thêm giới hạn zoom nếu cần, ví dụ: newZoomRatio từ 1.0 đến 5.0
+                    camera.getCameraControl().setZoomRatio(newZoomRatio);
+                }
+                return true;
+            }
+        });
+
+        // Gán touch listener cho previewView để nhận sự kiện zoom
+        previewView.setOnTouchListener((v, event) -> {
+            scaleGestureDetector.onTouchEvent(event);
+            return true;
+        });
+        // ----------------------------------------------------- //
 
         btnRecord.setOnClickListener(view -> {
             if (isListening) {
@@ -255,7 +285,6 @@ public class MainActivity extends AppCompatActivity {
             permissionLauncher.launch(Manifest.permission.CAMERA);
         }
 
-
         // Khởi tạo TextToSpeech
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
@@ -271,8 +300,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     String textRecord = "";
-
-    // ================================================================
 
     // ================================================================
     // REGION: PHƯƠNG THỨC GỬI GHI ÂM
@@ -362,8 +389,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-    // ===============================================================
 
     // ================================================================
     // REGION: PHƯƠNG THỨC GHI ÂM
@@ -477,8 +502,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     // ================================================================
     // REGION: PHƯƠNG THỨC BLUETOOTH
     // ================================================================
@@ -525,23 +548,6 @@ public class MainActivity extends AppCompatActivity {
         // Bắt đầu quét
         startBleScan();
     }
-
-
-//    private void sendRecognizedText() {
-//        // Lấy nội dung từ tvResult trước khi kiểm tra
-//        String recognizedText = tvResult.getText().toString();
-//
-//        if (recognizedText == null || recognizedText.trim().isEmpty() || tvResult.getText().equals("Kết quả ghi âm")) {
-//            Toast.makeText(MainActivity.this, "Chưa có nội dung ghi âm để gửi", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        if (bluetoothAdapter == null) {
-//            Toast.makeText(MainActivity.this, "Thiết bị không hỗ trợ Bluetooth", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        sendTextViaBluetooth(recognizedText);
-//    }
-
 
     /** Hàm bắt đầu quét BLE */
     @SuppressLint("SetTextI18n")
@@ -662,17 +668,9 @@ public class MainActivity extends AppCompatActivity {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "Kết nối thành công", Toast.LENGTH_SHORT).show());
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
                 btnSelectDevice.setText("Thiết bị:" + bluetoothDeviceBLE.getName());
-                // Đợi 500ms trước khi gọi discoverServices() để BLE stack ổn định
                 handler.postDelayed(() -> {
                     if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                         return;
@@ -781,7 +779,7 @@ public class MainActivity extends AppCompatActivity {
             if (allGranted) {
                 startBleScan();
             } else {
-                Toast.makeText(this, "Cần có permission Bluetooth để quét thiết bị", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Cần có permission Bluetooth để quét thiết bị", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -792,13 +790,6 @@ public class MainActivity extends AppCompatActivity {
                 byte[] value = text.getBytes();
                 writeCharacteristic.setValue(value);
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
                 boolean success = bluetoothGatt.writeCharacteristic(writeCharacteristic);
@@ -812,9 +803,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "Chưa kết nối với thiết bị BLE", Toast.LENGTH_SHORT).show();
         }
     }
-
-    // ================================================================
-
 
     // ================================================================
     // REGION: CAMERA, ML KIT OCR & CALL API
@@ -853,7 +841,6 @@ public class MainActivity extends AppCompatActivity {
                                                 isProcessingPlate = true;
                                                 callTrafficFineAPI(plate);
                                             }
-
                                         });
                                     }
                                 })
@@ -865,7 +852,8 @@ public class MainActivity extends AppCompatActivity {
                 });
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
                 cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+                // Lưu lại đối tượng Camera để điều khiển zoom
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis); // Modified for camera zoom
             } catch (Exception e) {
                 Toast.makeText(MainActivity.this, "Lỗi khởi tạo camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "startCamera error", e);
@@ -878,75 +866,6 @@ public class MainActivity extends AppCompatActivity {
         void onPlateFound(String licensePlate);
         void onNoPlateFound();
     }
-
-    // --- Helper: Tính toán inSampleSize ---
-//    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-//        int height = options.outHeight;
-//        int width = options.outWidth;
-//        int inSampleSize = 1;
-//        if (height > reqHeight || width > reqWidth) {
-//            final int halfHeight = height / 2;
-//            final int halfWidth = width / 2;
-//            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
-//                inSampleSize *= 2;
-//            }
-//        }
-//        return inSampleSize;
-//    }
-//
-//    // Hàm capturePhotoAndFreeze và processCapturedImage vẫn giữ nguyên (dùng để debug nếu cần)
-//    private void capturePhotoAndFreeze() {
-//        // Không sử dụng nút chụp nên hàm này không được gọi
-//    }
-//
-//    private void processCapturedImage(Bitmap bitmap) {
-//        try {
-//            InputImage image = InputImage.fromBitmap(bitmap, 0);
-//            textRecognizer.process(image)
-//                    .addOnSuccessListener(visionText -> {
-//                        String recognizedText = visionText.getText();
-//                        Log.d("MLKit", "Recognized text: " + recognizedText);
-//                        String cleanedText = recognizedText.replaceAll("[\\s\\.-]+", "").trim().toUpperCase();
-//                        String licensePlate = extractLicensePlate(cleanedText);
-//                        if (licensePlate != null) {
-//                            Toast.makeText(MainActivity.this, "Biển số: " + licensePlate, Toast.LENGTH_LONG).show();
-//                            edtBienSoXe.setText(licensePlate);
-//                            if (bitmap != null && !bitmap.isRecycled()) {
-//                                bitmap.recycle();
-//                            }
-//                        } else {
-//                            int[] angles = {15, -15, 30, -30};
-//                            attemptOCRWithRotation(bitmap, angles, 0, new OCRCallback() {
-//                                @Override
-//                                public void onPlateFound(String plate) {
-//                                    Toast.makeText(MainActivity.this, "Biển số (xoay): " + plate, Toast.LENGTH_LONG).show();
-//                                    edtBienSoXe.setText(plate);
-//                                    if (bitmap != null && !bitmap.isRecycled()) {
-//                                        bitmap.recycle();
-//                                    }
-//                                }
-//                                @Override
-//                                public void onNoPlateFound() {
-//                                    Toast.makeText(MainActivity.this, "Không tìm thấy biển số xe", Toast.LENGTH_SHORT).show();
-//                                    if (bitmap != null && !bitmap.isRecycled()) {
-//                                        bitmap.recycle();
-//                                    }
-//                                }
-//                            });
-//                        }
-//                    })
-//                    .addOnFailureListener(e -> {
-//                        Toast.makeText(MainActivity.this, "Lỗi xử lý ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                        Log.e("MLKit", "Text recognition error", e);
-//                        if (bitmap != null && !bitmap.isRecycled()) {
-//                            bitmap.recycle();
-//                        }
-//                    });
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Toast.makeText(MainActivity.this, "Lỗi khi xử lý ảnh", Toast.LENGTH_SHORT).show();
-//        }
-//    }
 
     private void attemptOCRWithRotation(final Bitmap originalBitmap, final int[] angles, final int index, final OCRCallback callback) {
         if (index >= angles.length) {
@@ -1003,7 +922,6 @@ public class MainActivity extends AppCompatActivity {
 
     // Sửa hàm extractLicensePlate để bắt biển số có 4-5 số ở cuối
     private String extractLicensePlate(String cleanedText) {
-        // Các mẫu regex được cập nhật:
         String regexStandard         = "\\d{2}[A-Z]{1,2}\\d{4,5}";
         String regexDiplomatic       = "\\d{2}CD\\d{4,5}";
         String regexMilitary         = "\\d{2}QT\\d{4,5}";
@@ -1077,19 +995,14 @@ public class MainActivity extends AppCompatActivity {
                                 tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                                     @Override
                                     public void onStart(String utteranceId) {
-                                        // Khi bắt đầu nói
-
                                         Log.d("TTS", "Bắt đầu nói: " + utteranceId);
                                         isProcessingPlate = true;
                                     }
                                     @SuppressLint("SetTextI18n")
                                     @Override
                                     public void onDone(String utteranceId) {
-
-                                        // Khi hoàn thành phát âm
                                         Log.d("TTS", "Hoàn thành nói: " + utteranceId);
                                         runOnUiThread(() -> {
-                                            // Thực hiện hành động sau khi nói xong, ví dụ: cập nhật giao diện
                                             startVoiceRecognition();
                                             btnRecord.setText("Đang chờ nhận lệnh:");
                                             isWaitingRespose = true;
@@ -1102,11 +1015,9 @@ public class MainActivity extends AppCompatActivity {
                                                         speechRecognizer.stopListening();
                                                     }
                                                     isListening = false;
-                                                    // Cập nhật lại giao diện sau khi dừng ghi âm
                                                     btnRecord.setText("Bấm để ghi âm");
 
                                                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
-
                                                         checkAndRunSendPhatnguoi();
                                                         isProcessingPlate = false;
                                                         askingToSendPenalty = false;
@@ -1135,13 +1046,12 @@ public class MainActivity extends AppCompatActivity {
                         isProcessingPlate = false;
                     }
 
+                    runOnUiThread(() -> {
+                    });
                 } else {
                     Toast.makeText(MainActivity.this, "Lỗi API: " + response.code(), Toast.LENGTH_SHORT).show();
                     isProcessingPlate = false;
                 }
-                runOnUiThread(() -> {
-                    //isProcessingPlate = false;
-                });
             }
             @Override
             public void onFailure(@NonNull Call<ApiResponse> call, @NonNull Throwable t) {
@@ -1156,7 +1066,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkAndRunSendPhatnguoi() {
         String text = tvResult.getText().toString().toLowerCase();
-        // Danh sách từ khóa biểu đạt ý muốn gửi lỗi phạt nguội
         String[] affirmativeKeywords = {
                 "có",
                 "yes",
@@ -1174,11 +1083,10 @@ public class MainActivity extends AppCompatActivity {
                 String textSend = licensePlatePenalty + " CO " + numberOfPenalty + " LOI PHAT NGUOI CHUA XU LY.";
                 sendTextViaBluetooth(txtKetQuaPhatNguoi.getText().toString());
                 Toast.makeText(MainActivity.this, "xác nhận gửi: " + textSend , Toast.LENGTH_SHORT).show();
-                break; // Dừng vòng lặp khi đã nhận diện được
+                break;
             }
         }
     }
-
 
     // ================================================================
     // REGION: RETROFIT API INTERFACE & MODEL CLASSES
