@@ -12,19 +12,23 @@
     tools:context=".MainActivity">
 
     <!-- Icon ở góc trên bên phải -->
+
+    <!-- Guidelines theo phần trăm cho khoảng cách mép -->
+
     <ImageButton
         android:id="@+id/iconAutoCheckPhatNguoi"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="32dp"
+        android:layout_height="31dp"
         android:layout_margin="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Loa"
         android:padding="8dp"
         android:src="@drawable/tra_phat_nguoi_icon"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Guidelines theo phần trăm cho khoảng cách mép -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_start"
         android:layout_width="wrap_content"
@@ -44,13 +48,12 @@
         android:id="@+id/previewView"
         android:layout_width="328dp"
         android:layout_height="246dp"
-        android:layout_marginTop="16dp"
         app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintEnd_toEndOf="@id/guideline_end"
         app:layout_constraintHeight_default="percent"
         app:layout_constraintHeight_percent="0.25"
         app:layout_constraintStart_toStartOf="@id/guideline_start"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/iconAutoCheckPhatNguoi" />
 
     <!-- Hàng nhập biển số xe -->
     <LinearLayout

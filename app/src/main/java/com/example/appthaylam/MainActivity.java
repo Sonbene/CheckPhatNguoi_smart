@@ -922,11 +922,11 @@ public class MainActivity extends AppCompatActivity {
 
     // Sửa hàm extractLicensePlate để bắt biển số có 4-5 số ở cuối
     private String extractLicensePlate(String cleanedText) {
-        String regexStandard         = "\\d{2}[A-Z]{1,2}\\d{4,5}";
-        String regexDiplomatic       = "\\d{2}CD\\d{4,5}";
-        String regexMilitary         = "\\d{2}QT\\d{4,5}";
-        String regexTaxi             = "\\d{2}TX\\d{4,5}";
-        String regexStandardAlphaNum = "\\d{2}[A-Z0-9]{1,2}\\d{4,5}";
+        String regexStandard         = "\\d{2}[A-Z]{1,2}\\d{4,6}";
+        String regexDiplomatic       = "\\d{2}CD\\d{4,6}";
+        String regexMilitary         = "\\d{2}QT\\d{4,6}";
+        String regexTaxi             = "\\d{2}TX\\d{4,6}";
+        String regexStandardAlphaNum = "\\d{2}[A-Z0-9]{1,2}\\d{4,6}";
         String[] regexPatterns = new String[] {
                 regexStandard,
                 regexDiplomatic,
