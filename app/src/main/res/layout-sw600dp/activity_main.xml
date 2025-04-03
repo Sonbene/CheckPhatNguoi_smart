@@ -96,13 +96,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
+
         <ScrollView
             android:id="@+id/scrollViewAPI"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="228dp"
             android:layout_weight="1"
             android:background="#EFE5E5"
             android:backgroundTint="#99BC6F">
+
             <TextView
                 android:id="@+id/txtKetQuaPhatNguoi"
                 android:layout_width="match_parent"
@@ -131,22 +133,23 @@
                 android:textSize="26sp" />
         </ScrollView>
     </LinearLayout>
-
-    <!-- EditText dòng nhập biển số (nếu cần hiển thị riêng, ngoài leftColumn) -->
+    <!-- EditText dòng nhập biển số (không có gạch chân) -->
     <EditText
         android:id="@+id/edtBienSoXe"
         android:layout_width="522dp"
         android:layout_height="73dp"
         android:layout_margin="8dp"
         android:layout_marginTop="8dp"
+        android:background="@null"
         android:gravity="center"
         android:inputType="text"
         android:text="19A29694"
-        android:textColor="#070101"
-        android:textSize="26sp"
+        android:textColor="#EB0909"
+        android:textSize="48sp"
         app:layout_constraintEnd_toStartOf="@+id/guideline_divide"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/iconAutoCheckPhatNguoi"
         app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
